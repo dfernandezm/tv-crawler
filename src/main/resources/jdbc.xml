@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+    <bean id="targetDataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
+        <property name="driverClass">
+            <value>com.mysql.jdbc.Driver</value>
+        </property>
+        <property name="jdbcUrl">
+            <value>jdbc:mysql://@databaseDomainAndName@?useUnicode=true&amp;characterEncoding=UTF-8</value>
+        </property>
+        <property name="properties">
+            <props>
+                <prop key="c3p0.min_size">5</prop>
+                <prop key="c3p0.max_size">20</prop>
+                <prop key="c3p0.timeout">7200</prop>
+                <prop key="c3p0.idle_test_period">3600</prop>
+                <prop key="c3p0.max_statements">50</prop>
+                <prop key="user">@databaseUsername@</prop>
+                <prop key="password">@databasePassword@</prop>
+            </props>
+        </property>
+    </bean>
+    
+    <!--<bean id="dataSource" class="org.springframework.jdbc.datasource.IsolationLevelDataSourceAdapter">-->
+        <!--<property name="isolationLevelName" value="ISOLATION_READ_COMMITTED"/>-->
+        <!--<property name="targetDataSource" ref="targetDataSource"/>-->
+    <!--</bean>-->
+
+    <!--<bean id="hibernateProperties"-->
+         <!--class="org.springframework.beans.factory.config.PropertiesFactoryBean">-->
+      <!--<property name="properties">-->
+        <!--<props>-->
+            <!--<prop key="hibernate.dialect">org.hibernate.dialect.MySQLInnoDBDialect</prop>-->
+            <!--<prop key="hibernate.show_sql">false</prop>-->
+			<!--<prop key="hibernate.hbm2ddl.auto">validate</prop>-->
+        <!--</props>-->
+      <!--</property>-->
+    <!--</bean>-->
+       	
+</beans>
