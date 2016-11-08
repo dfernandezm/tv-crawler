@@ -1,12 +1,10 @@
 package com.morenware.tvcrawler.persistence.domain;
-
-import com.morenware.tvcrawler.persistence.dao.Identifiable;
 import org.joda.time.LocalDateTime;
 
 /**
  * Created by david on 23/05/15.
  */
-public class TorrentSearchResult implements Identifiable<Integer> {
+public class TorrentSearchResult {
 
     private Integer id;
     private String title;
@@ -60,12 +58,10 @@ public class TorrentSearchResult implements Identifiable<Integer> {
 
     }
 
-    @Override
     public Integer getId() {
         return id;
     }
 
-    @Override
     public void setId(Integer id) {
         this.id = id;
     }

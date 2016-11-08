@@ -3,9 +3,8 @@ package com.morenware.tvcrawler.service.torrentsearch;
 import com.morenware.tvcrawler.persistence.domain.TorrentContentType;
 import com.morenware.tvcrawler.persistence.domain.TorrentSearchResult;
 import com.morenware.tvcrawler.service.TorrentService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormat;
@@ -15,16 +14,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.support.TransactionCallbackWithoutResult;
-import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.DigestUtils;
 import org.springframework.util.StringUtils;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
@@ -45,10 +37,12 @@ import java.util.regex.Pattern;
  * Created by david on 23/05/15.
  */
 
-@Service
+@Slf4j
 public class TorrentSearchService {
 
-    private static Logger LOG = LogManager.getLogger();
+    //private static logger log = logger.getGlobal();
+
+   // private static final SimpleLogger logger =  SimpleLogger.
 
     private static final Integer CONNECTION_RETRY_COUNT = 5;
 
@@ -65,18 +59,18 @@ public class TorrentSearchService {
     @Resource
     private TorrentService torrentService;
 
-    @Resource
-    private PlatformTransactionManager transactionManager;
-    private TransactionTemplate requiresNewTransactionTemplate;
+//    @Resource
+//    private PlatformTransactionManager transactionManager;
+//    private TransactionTemplate requiresNewTransactionTemplate;
+//
+//    private TransactionTemplate transactionTemplate;
 
-    private TransactionTemplate transactionTemplate;
-
-    @PostConstruct
-    public void init() throws Exception {
-        requiresNewTransactionTemplate = new TransactionTemplate(transactionManager);
-        requiresNewTransactionTemplate.setPropagationBehavior(Propagation.REQUIRES_NEW.value());
-        transactionTemplate = new TransactionTemplate(transactionManager);
-    }
+//    @PostConstruct
+//    public void init() throws Exception {
+//        requiresNewTransactionTemplate = new TransactionTemplate(transactionManager);
+//        requiresNewTransactionTemplate.setPropagationBehavior(Propagation.REQUIRES_NEW.value());
+//        transactionTemplate = new TransactionTemplate(transactionManager);
+//    }
 
     // Case insensitive (?i)
     private static final String TORRENT_SIZE_REGEX = "(?i)([0-9]+(?:\\.)*(?:[0-9]+)*)(?:.*)(GB|MB|KB)";
@@ -281,7 +275,7 @@ public class TorrentSearchService {
                                         }
                                     }
 
-                                    LOG.info("[] Getting torrentLink ==> " + torrentResult.getTorrentFileLink() + " - " + torrentResult.getMagnetLink() + ", date: " + torrentResult.getDate().toString(DateTimeFormat.shortDateTime()));
+                                    log.info("[] Getting torrentLink ==> " + torrentResult.getTorrentFileLink() + " - " + torrentResult.getMagnetLink() + ", date: " + torrentResult.getDate().toString(DateTimeFormat.shortDateTime()));
 
                                     currentResults.add(torrentResult);
                                     persistTorrentResults(currentResults);
@@ -317,15 +311,13 @@ public class TorrentSearchService {
                         }
 
                     } catch (Throwable t) {
-                        LOG.warn("Error retrieving elements for element - ", t);
+                        log.warn("Error retrieving elements for element - ", t);
                     }
                 }
             };
-
-
+            
             Future<?> future = executorService.submit(elementRunnable);
             futures.add(future);
-
         }
 
         return results;
@@ -440,7 +432,7 @@ public class TorrentSearchService {
 
     private void crawlWebsiteAndPersistResults(TorrentWebsiteDetails torrentWebsiteDetails) {
 
-        LOG.info("Starting to crawl site " + torrentWebsiteDetails.getBaseUrl());
+        log.info("Starting to crawl site " + torrentWebsiteDetails.getBaseUrl());
 
         long overallStartTime = System.currentTimeMillis();
 
@@ -449,7 +441,7 @@ public class TorrentSearchService {
 
         for (final TorrentWebsiteSection section : torrentWebsiteDetails.getSections()) {
 
-            LOG.info("Starting to crawl section " + section.getName());
+            log.info("Starting to crawl section " + section.getName());
 
             boolean isListingSection = true;
 
@@ -466,7 +458,7 @@ public class TorrentSearchService {
             // If the site has a chain of pages to get to the links, it is not a listing based one
             if (isListingSection) {
 
-                LOG.info("Section " + torrentWebsiteDetails.getBaseUrl() + " is a LISTING site - paged site");
+                log.info("Section " + torrentWebsiteDetails.getBaseUrl() + " is a LISTING site - paged site");
 
                 // Check if it is the first time we crawl this site
                 // If it is the first time, we crawl everything
@@ -479,7 +471,7 @@ public class TorrentSearchService {
 
             } else {
 
-                LOG.info("Site " + torrentWebsiteDetails.getBaseUrl() + " is not a LISTING site - chain of pages");
+                log.info("Site " + torrentWebsiteDetails.getBaseUrl() + " is not a LISTING site - chain of pages");
                 sectionBaseLink = createInitialSearchLink(torrentWebsiteDetails.getBaseUrl(),
                         mainSectionLink, "");
             }
@@ -498,7 +490,7 @@ public class TorrentSearchService {
                         sectionType, dateAsString, true);
 
             } catch (Throwable t) {
-                LOG.error("Could not get HTML from first page - link  " + baseLink + " moving to next section");
+                log.error("Could not get HTML from first page - link  " + baseLink + " moving to next section");
             }
 
 
@@ -522,7 +514,7 @@ public class TorrentSearchService {
                             @Override
                             public void run() {
 
-                                LOG.info("[CRAWLER-LISTING] Retrieving HTML from page " + finali);
+                                log.info("[CRAWLER-LISTING] Retrieving HTML from page " + finali);
                                 String linkToConnect = baseLink + section.getPagerParameter().replace("{pageNumber}", finali + "");
 
                                 try {
@@ -532,7 +524,7 @@ public class TorrentSearchService {
                                     String htmli = getHtmlFromPageAndCache(linkToConnect, finali, twt.getSiteId(),
                                             sectionType, dateAsString, true);
 
-                                    LOG.info("It took " + (System.currentTimeMillis() - startConnectingTime) + " ms to connect to link " + linkToConnect);
+                                    log.info("It took " + (System.currentTimeMillis() - startConnectingTime) + " ms to connect to link " + linkToConnect);
 
                                     // Crawl cached page: extract title, torrent link, date, seeds, size
                                     finalResults.addAll(crawlHtmlForTorrentData(twt, section, sectionContentType, htmli));
@@ -540,7 +532,7 @@ public class TorrentSearchService {
                                     throttleThreadForMillis(200);
 
                                 } catch (Throwable t) {
-                                    LOG.warn("Error getting content from link " + linkToConnect, t);
+                                    log.warn("Error getting content from link " + linkToConnect, t);
                                 }
                             }
                         };
@@ -548,7 +540,7 @@ public class TorrentSearchService {
                         Future<?> future = executorService.submit(r);
                         futures.add(future);
 
-                        LOG.info("[CRAWLER-LISTING] Submitting job to Executor, count " + futures.size());
+                        log.info("[CRAWLER-LISTING] Submitting job to Executor, count " + futures.size());
 
                     }
 
@@ -571,7 +563,7 @@ public class TorrentSearchService {
             boolean terminated = false;
             while (!terminated) {
 
-                LOG.info("Waiting for threads to terminate, remaining --" + futures.size());
+                log.info("Waiting for threads to terminate, remaining --" + futures.size());
 
                 while (futureIterator.hasNext()) {
                     Future<?> future = futureIterator.next();
@@ -589,12 +581,12 @@ public class TorrentSearchService {
                 throttleThreadForMillis(500);
             }
 
-            LOG.info("Finishing to crawl section -- " + mainSectionLink + " --- " + results.size() + " found so far");
+            log.info("Finishing to crawl section -- " + mainSectionLink + " --- " + results.size() + " found so far");
 
         }
 
         // Finish
-        LOG.info("[SEARCH-CRAWL] It took " + (System.currentTimeMillis() - overallStartTime) + " ms to crawl entire website, found " + results.size() + " torrents.");
+        log.info("[SEARCH-CRAWL] It took " + (System.currentTimeMillis() - overallStartTime) + " ms to crawl entire website, found " + results.size() + " torrents.");
     }
 
 
@@ -622,15 +614,15 @@ public class TorrentSearchService {
             }
 
             if (numberPages == null) {
-                LOG.warn("Could not found number of pages to visit -- using maximum number: " + MAXIMUM_NUMBER_OF_PAGES);
+                log.warn("Could not found number of pages to visit -- using maximum number: " + MAXIMUM_NUMBER_OF_PAGES);
                 return MAXIMUM_NUMBER_OF_PAGES;
             } else {
-                LOG.info("[SEARCH] We need to visit " + numberPages + " pages");
+                log.info("[SEARCH] We need to visit " + numberPages + " pages");
                 return numberPages;
             }
         }
 
-        LOG.warn("Could not found number of pages to visit -- using maximum number: " + MAXIMUM_NUMBER_OF_PAGES);
+        log.warn("Could not found number of pages to visit -- using maximum number: " + MAXIMUM_NUMBER_OF_PAGES);
 
         return MAXIMUM_NUMBER_OF_PAGES;
     }
@@ -645,7 +637,7 @@ public class TorrentSearchService {
                 @Override
                 public Document run() {
                     try {
-                        LOG.info("Attempting connection to link " + link);
+                        log.info("Attempting connection to link " + link);
                         Connection.Response response = Jsoup.connect(link)
                                 .ignoreContentType(true)
                                 .userAgent("Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0")
@@ -653,11 +645,11 @@ public class TorrentSearchService {
                                 .timeout(12000)
                                 .followRedirects(true)
                                 .execute();
-                        LOG.info("Connection with link " + link + " was successful - starting to process");
+                        log.info("Connection with link " + link + " was successful - starting to process");
                         return response.parse();
 
                     } catch (Throwable t) {
-                        LOG.error("====> Error connecting to link " + link, t);
+                        log.error("====> Error connecting to link " + link, t);
                         throttleThreadForMillis(1000);
                         throw new RuntimeException(t);
                     }
@@ -678,7 +670,7 @@ public class TorrentSearchService {
 
 
     private void throttleThreadForMillis(long millis) {
-        LOG.info("Throttling for " + millis + " ms");
+        log.info("Throttling for " + millis + " ms");
         try {
             Thread.sleep(250);
         } catch (InterruptedException e) {
@@ -691,7 +683,7 @@ public class TorrentSearchService {
             File fileCache = getCacheFile(siteId, sectionId, pageNumber, link, dateWithDay);
             return FileUtils.readFileToString(fileCache);
         } catch (IOException ioe) {
-            LOG.error("Error reading cached file", ioe);
+            log.error("Error reading cached file", ioe);
             return null;
         }
     }
@@ -701,7 +693,7 @@ public class TorrentSearchService {
             File fileCache = getCacheFile(siteId, sectionId, pageNumber, link, dateWithDay);
             FileUtils.writeStringToFile(fileCache, contentToCache, Charset.forName("UTF-8"));
         } catch (IOException ioe) {
-            LOG.error("Error writing cached file", ioe);
+            log.error("Error writing cached file", ioe);
         }
     }
 
@@ -740,7 +732,7 @@ public class TorrentSearchService {
             torrentSearchResults.add(extractTorrentDataFromListElement(websiteDetails, currentSection, contentType, element));
         }
 
-        LOG.info("[CRAWLER] Single page - found " + torrentSearchResults.size() + " torrents");
+        log.info("[CRAWLER] Single page - found " + torrentSearchResults.size() + " torrents");
         return torrentSearchResults;
     }
 
@@ -764,7 +756,7 @@ public class TorrentSearchService {
                                                     siteDetails.getBaseUrl(), siteDetails.getSiteId());
             }
 
-            LOG.info("[SEARCH] - Torrent Found -- " + torrentSearchResult.getTitle() +
+            log.info("[SEARCH] - Torrent Found -- " + torrentSearchResult.getTitle() +
                      " [" + torrentSearchResult.getSeeds() + "] -- " + torrentSearchResult.getDate() + " -- " +
                      torrentSearchResult.getTorrentFileLink() + " -- " + torrentSearchResult.getMagnetLink());
         }
@@ -788,7 +780,7 @@ public class TorrentSearchService {
 
                 Element clickThroughElement = clickThroughElements.get(0);
                 String linkToVisit = clickThroughElement.attr("href");
-                LOG.info("Clicking through link to get more information -- " + linkToVisit);
+                log.info("Clicking through link to get more information -- " + linkToVisit);
 
                 Document newDocument = null;
 
@@ -796,7 +788,7 @@ public class TorrentSearchService {
                     throttleThreadForMillis(250);
                     newDocument = visitLinkElementAndGetDocumentFromHtml(clickThroughElement, baseUrl, siteId, "", true);
                 } catch (Throwable t) {
-                    LOG.info("Error visiting sub element -- " + linkToVisit, t);
+                    log.info("Error visiting sub element -- " + linkToVisit, t);
                 }
 
                 attemptTorrentDataExtractionAndPopulateResult(baseUrl, torrentSearchResult, currentSection, newDocument);
@@ -918,14 +910,14 @@ public class TorrentSearchService {
                     dateTime = dateTime.minusYears(Integer.parseInt(number));
                     break;
                 default:
-                    LOG.error("Time representation not considered yet -- " + timeRepresentation);
+                    log.error("Time representation not considered yet -- " + timeRepresentation);
                     throw new IllegalArgumentException("Time representation not considered yet -- " + timeRepresentation);
             }
 
             return dateTime;
 
         } else {
-            LOG.warn("No date information found for raw date text " + rawDateText + " following regex " + spanishAgeRegex);
+            log.warn("No date information found for raw date text " + rawDateText + " following regex " + spanishAgeRegex);
             return null;
         }
     }
@@ -964,13 +956,13 @@ public class TorrentSearchService {
                     date = date.minusMonths(number);
                     break;
                 default:
-                    LOG.error("Time representation not considered yet -- " + timeRepresentation);
+                    log.error("Time representation not considered yet -- " + timeRepresentation);
                     throw new IllegalArgumentException("Time representation not considered yet -- " + timeRepresentation);
             }
 
             return date;
         } else {
-            LOG.warn("No date information found for raw date text " + rawDateText + " following regex " + englishAgeRegex);
+            log.warn("No date information found for raw date text " + rawDateText + " following regex " + englishAgeRegex);
             return null;
         }
     }
@@ -995,7 +987,7 @@ public class TorrentSearchService {
 
             return size;
         } else {
-            LOG.warn("No size information found for raw date text " + rawSize + " following regex " + TORRENT_SIZE_REGEX);
+            log.warn("No size information found for raw date text " + rawSize + " following regex " + TORRENT_SIZE_REGEX);
             return null;
         }
     }
@@ -1014,13 +1006,13 @@ public class TorrentSearchService {
             } catch (Throwable e) {
                 retryCount++;
                 exception = e;
-                LOG.warn("Connection failing -- retrying " + retryCount, exception);
+                log.warn("Connection failing -- retrying " + retryCount, exception);
                 throttleThreadForMillis(PAUSE_TIME_BETWEEN_TRIES);
             }
         }
 
         if (!success) {
-            LOG.error("Connection failed after " + CONNECTION_RETRY_COUNT + " calls -- giving up ", exception);
+            log.error("Connection failed after " + CONNECTION_RETRY_COUNT + " calls -- giving up ", exception);
             throw new RuntimeException(exception);
         } else {
             return result;
@@ -1061,31 +1053,33 @@ public class TorrentSearchService {
 
             if (searchResult.getMagnetLink() != null || searchResult.getTorrentFileLink() != null) {
 
-                if (!torrentService.existsResultWithHash(hash) && searchResult.getId() == null) {
+               // if (!torrentService.existsResultWithHash(hash) && searchResult.getId() == null) {
                     searchResult.setSearchHash(hash);
                     final TorrentSearchResult finalSearchResult = searchResult;
 
                     try {
 
-                        transactionTemplate.execute(new TransactionCallbackWithoutResult() {
-                            @Override
-                            protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
-                                torrentService.persistTorrentSearchResult(finalSearchResult);
-                            }
-                        });
+//                        transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+//                            @Override
+//                            protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
+//                                torrentService.persistTorrentSearchResult(finalSearchResult);
+//                            }
+//                        });
+
+                        //TODO: persist
 
                         persisted++;
 
-                        LOG.info("[PERSIST-RESULT] Persisted torrent -- " + finalSearchResult.getTitle());
+                        log.info("[PERSIST-RESULT] Persisted torrent -- " + finalSearchResult.getTitle());
 
                     } catch (Throwable t) {
-                        LOG.error("Error inserting torrents in DB -- ", t);
+                        log.error("Error inserting torrents in DB -- ", t);
                     }
                 }
             }
-        }
+        //}
 
-        LOG.info("[PERSIST-RESULT] Persisted " + persisted + " torrents");
+        //log.info("[PERSIST-RESULT] Persisted " + persisted + " torrents");
     }
 
     private String calculateHashForSearchResult(TorrentSearchResult searchResult) {
@@ -1111,7 +1105,7 @@ public class TorrentSearchService {
             }
 
         } catch (UnsupportedEncodingException e) {
-            LOG.error("Unsupported encoding extracting title from magnet link ", e);
+            log.error("Unsupported encoding extracting title from magnet link ", e);
         }
 
         return null;
@@ -1137,7 +1131,7 @@ public class TorrentSearchService {
             }
 
         } catch (Throwable t) {
-            LOG.warn("Error extracting date from text: " + rawDateText + " - Regex " + dateRegex);
+            log.warn("Error extracting date from text: " + rawDateText + " - Regex " + dateRegex);
         }
         return null;
 
