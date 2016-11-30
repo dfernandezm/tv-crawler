@@ -3,10 +3,10 @@ package com.morenware.tvcrawler.vertx;
 import com.morenware.tvcrawler.vertx.example.ProductHandler;
 import com.morenware.tvcrawler.vertx.util.Runner;
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by david on 07/11/2016.
@@ -26,6 +26,7 @@ public class Main extends AbstractVerticle {
     }
 
     private void setup() {
+        log.info("Starting up...");
         ProductHandler productHandler = new ProductHandler();
         productHandler.setUpInitialData();
 
