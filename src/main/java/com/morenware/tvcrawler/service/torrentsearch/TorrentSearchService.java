@@ -1,23 +1,5 @@
 package com.morenware.tvcrawler.service.torrentsearch;
 
-import com.morenware.tvcrawler.persistence.domain.TorrentContentType;
-import com.morenware.tvcrawler.persistence.domain.TorrentSearchResult;
-import com.morenware.tvcrawler.service.TorrentService;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
-import org.joda.time.DateTime;
-import org.joda.time.LocalDateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
-import org.jsoup.Connection;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import org.springframework.util.DigestUtils;
-import org.springframework.util.StringUtils;
-
-import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -31,18 +13,32 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.Resource;
 
+import com.morenware.tvcrawler.persistence.domain.TorrentContentType;
+import com.morenware.tvcrawler.persistence.domain.TorrentSearchResult;
+import com.morenware.tvcrawler.service.TorrentService;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateTime;
+import org.joda.time.LocalDateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 /**
  * Created by david on 23/05/15.
  */
-
-@Slf4j
 public class TorrentSearchService {
 
-    //private static logger log = logger.getGlobal();
-
-   // private static final SimpleLogger logger =  SimpleLogger.
+    private Logger log = LoggerFactory.getLogger(TorrentSearchService.class.getName());
 
     private static final Integer CONNECTION_RETRY_COUNT = 5;
 
@@ -58,19 +54,6 @@ public class TorrentSearchService {
 
     @Resource
     private TorrentService torrentService;
-
-//    @Resource
-//    private PlatformTransactionManager transactionManager;
-//    private TransactionTemplate requiresNewTransactionTemplate;
-//
-//    private TransactionTemplate transactionTemplate;
-
-//    @PostConstruct
-//    public void init() throws Exception {
-//        requiresNewTransactionTemplate = new TransactionTemplate(transactionManager);
-//        requiresNewTransactionTemplate.setPropagationBehavior(Propagation.REQUIRES_NEW.value());
-//        transactionTemplate = new TransactionTemplate(transactionManager);
-//    }
 
     // Case insensitive (?i)
     private static final String TORRENT_SIZE_REGEX = "(?i)([0-9]+(?:\\.)*(?:[0-9]+)*)(?:.*)(GB|MB|KB)";
@@ -1086,7 +1069,7 @@ public class TorrentSearchService {
 
         String toHash = searchResult.getMagnetLink() != null ? searchResult.getMagnetLink() : "";
         toHash += searchResult.getTorrentFileLink() != null ? searchResult.getTorrentFileLink() : "";
-        String hash = DigestUtils.md5DigestAsHex(toHash.getBytes());
+        String hash = DigestUtils.md5Hex(toHash.getBytes());
         return hash;
     }
 

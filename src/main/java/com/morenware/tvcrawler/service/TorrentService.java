@@ -1,11 +1,8 @@
 package com.morenware.tvcrawler.service;
 
-import org.springframework.stereotype.Service;
-
 /**
  * Created by david on 17/05/15.
  */
-@Service
 public class TorrentService {
 
 //    @Resource(name = "torrentDao")

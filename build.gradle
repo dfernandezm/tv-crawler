@@ -1,137 +1,46 @@
-import org.apache.tools.ant.filters.ReplaceTokens
-
-buildscript {
-    ext {
-        springBootVersion = '1.3.0.RELEASE'
-    }
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}") 
-    }
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '1.2.3'
 }
-
-apply plugin: 'java'
-apply plugin: 'eclipse'
-apply plugin: 'idea'
-apply plugin: 'spring-boot' 
-
-jar {
-    baseName = 'tvcrawler'
-    version = '0.0.1-SNAPSHOT'
-}
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
 
 repositories {
-    mavenCentral()
+    jcenter()
 }
 
+sourceCompatibility = '1.8'
+
+def vertxVersion = '3.3.3'
 def jodaTimeVersion = "2.9"
 def jsoupVersion = "1.8.2"
-def jadiraVersion = "4.0.0.GA"
-def log4jVersion = "2.1"
-def slf4jVersion = "1.7.7"
 def commonsIoVersion = "2.4"
-def c3p0Version = "0.9.1.2"
-def hibernateVersion = "4.3.5.Final"
-def springVersion = "4.2.3.RELEASE"
+def commonsLangVersion = "2.6"
+def commonsCodecVersion = "1.8"
 
-List log4j = [
-        "org.apache.logging.log4j:log4j-1.2-api:$log4jVersion",
-        "org.apache.logging.log4j:log4j-core:$log4jVersion",
-        "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion",
-        "org.apache.logging.log4j:log4j-api:$log4jVersion"
-]
-
-List slf4j = [
-        "org.slf4j:slf4j-api:$slf4jVersion",
-        "org.slf4j:slf4j-ext:$slf4jVersion"
-]
-
-configurations {
-
-            all.collect { configuration ->
-
-                configuration.exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
-
-    }
-
-}
 dependencies {
-    compile 'org.springframework.boot:spring-boot-starter'
-    // compile('org.springframework.boot:spring-boot-starter-data-jpa')
-    // compile('org.springframework.boot:spring-boot-starter-security')
-    compile('org.springframework.boot:spring-boot-starter-web')
-    runtime('mysql:mysql-connector-java')
-    testCompile('org.springframework.boot:spring-boot-starter-test')
-
-    compile "org.hibernate:hibernate-core:$hibernateVersion"
-
-    compile "org.jadira.usertype:usertype.core:$jadiraVersion"
-
+    compile "io.vertx:vertx-core:$vertxVersion"
+    compile "io.vertx:vertx-web:$vertxVersion"
     compile "joda-time:joda-time:$jodaTimeVersion"
-
     compile "org.jsoup:jsoup:$jsoupVersion"
-
     compile "commons-io:commons-io:$commonsIoVersion"
-
-    compile "c3p0:c3p0:$c3p0Version"
-
-    List spring = ["org.springframework:spring-tx:$springVersion",
-                   "org.springframework:spring-orm:$springVersion"]
-
-    // compile 'commons-logging:commons-logging:1.2'
-
-    // compile "com.sparkjava:spark-core:2.5.2"
-
-    // Logging
-    //    slf4j.each { artifact ->
-    //        compile artifact, {
-    //            exclude group: 'ch.qos.cal10n'
-    //        }
-    //    }
-
-    // compile log4j, spring
-
-    compile group: 'com.sparkjava', name: 'spark-core', version:'2.5.2'
-    compile group: 'com.sparkjava', name: 'spark-debug-tools', version:'0.5'
-    compile group: 'com.sparkjava', name: 'spark-template-velocity', version:'2.3'
-    compile group: 'org.slf4j', name: 'slf4j-simple', version:'1.7.13'
+    compile "commons-lang:commons-lang:$commonsLangVersion"
+    compile "commons-codec:commons-codec:$commonsCodecVersion"
     compile group: 'org.projectlombok', name: 'lombok', version:'1.16.6'
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version:'2.5.1'
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version:'2.5.1'
     compile group: 'com.google.guava', name: 'guava', version:'19.0'
 }
 
-
-eclipse {
-    classpath {
-         containers.remove('org.eclipse.jdt.launching.JRE_CONTAINER')
-         containers 'org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8'
+shadowJar {
+    classifier = 'fat'
+    mergeServiceFiles {
+        include 'META-INF/services/io.vertx.core.spi.VerticleFactory'
     }
 }
+
+//mainClassName = 'io.vertx.example.HelloWorldEmbedded'
 
 task wrapper(type: Wrapper) {
     gradleVersion = '2.9'
 }
 
-loadConfiguration()
-
-processResources {
-    filter(ReplaceTokens, tokens: config)
-}
-
-def loadConfiguration() {
-    // This can be passed from the command line like -Penv=value
-    def conf = hasProperty('env') ? env : 'david'
-    ext.conf = conf
-    println "Environment is set to $conf"
-    def configFile = file('conf/config.groovy')
-    def config = new ConfigSlurper("$conf").parse(configFile.toURL())
-
-    // create this property in ext, so it can be used in 'processResources' to replace tokens in resource files
-    // which are the files under 'src/main/resources'
-    ext.config = config
-}
