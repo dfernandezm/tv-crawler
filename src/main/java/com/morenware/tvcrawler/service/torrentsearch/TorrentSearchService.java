@@ -13,11 +13,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.annotation.Resource;
 
 import com.morenware.tvcrawler.persistence.domain.TorrentContentType;
 import com.morenware.tvcrawler.persistence.domain.TorrentSearchResult;
-import com.morenware.tvcrawler.service.TorrentService;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -51,9 +49,6 @@ public class TorrentSearchService {
     private static final String TITLE_IN_MAGNET_LINK_REGEX = "&dn=(.*)&";
 
     private static final Integer MAXIMUM_NUMBER_OF_PAGES = 350;
-
-    @Resource
-    private TorrentService torrentService;
 
     // Case insensitive (?i)
     private static final String TORRENT_SIZE_REGEX = "(?i)([0-9]+(?:\\.)*(?:[0-9]+)*)(?:.*)(GB|MB|KB)";
